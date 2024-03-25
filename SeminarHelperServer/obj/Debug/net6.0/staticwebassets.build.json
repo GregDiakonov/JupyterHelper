@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "LxDYmcQ9MvLNKQ36rf0xre3GGjlHfKW0TOn2Y9zldXg=",
+  "Source": "SeminarHelperServer",
+  "BasePath": "_content/SeminarHelperServer",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
