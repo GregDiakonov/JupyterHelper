@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SeminarHelperServer.Models;
 using StackExchange.Redis;
+using SeminarHelperServer.DataObject;
 using System.Runtime.CompilerServices;
 using static System.Net.Mime.MediaTypeNames;
 
@@ -19,15 +20,20 @@ namespace SeminarHelperServer.Controllers
          * 6. Учитель просматривает позицию всех учеников на поле.
          */
 
-        private IDatabase db;
-        private ConnectionMultiplexer redis;
+        private static ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("127.0.0.1:6379");
+        private static IDatabase db = redis.GetDatabase();
         static public List<int> freeIds = new List<int>();
         static public List<Seminar> seminars = new List<Seminar>();
 
         public SeminarController()
         {
-            redis = ConnectionMultiplexer.Connect("127.0.0.1:6379");
             db = redis.GetDatabase();
+        }
+
+        [HttpGet("test")]
+        public IActionResult test()
+        {
+            return Ok("Test");
         }
 
         ~SeminarController()
@@ -35,8 +41,8 @@ namespace SeminarHelperServer.Controllers
             redis.Close();
         }
 
-        [HttpPost("NewSeminar/{textboxes}")]
-        async public Task<IActionResult> RegisterNewSeminar(int textboxes)
+        [HttpPost("NewSeminar")]
+        async public Task<IActionResult> RegisterNewSeminar()
         {
             Seminar newSeminar = new Seminar();
 
@@ -54,7 +60,7 @@ namespace SeminarHelperServer.Controllers
                 i += 1;    
             }
 
-            newSeminar.textboxes = textboxes;
+            newSeminar.textboxes = 1000;
             newSeminar.created = DateTime.Now;
             newSeminar.students = new List<Student>();
 
@@ -127,11 +133,25 @@ namespace SeminarHelperServer.Controllers
         }
 
         [HttpGet("teacher/getStudent/{studentId}")]
-        async public Task<IActionResult> GetStudentText (int studentId, int textboxId)
+        async public Task<IActionResult> GetStudentText (int studentId)
         {
-            string text = db.ListGetByIndex(studentId.ToString(), textboxId);
+            List<TextInfo> allTexts = new List<TextInfo>();
 
-            return Ok(text);
+            for (int i = 1; i < 1000; i++)
+            {
+                string thisText = db.ListGetByIndex(studentId.ToString(), i);
+
+                if (thisText != null && thisText.Length > 0)
+                {
+                    TextInfo textInfo = new TextInfo();
+                    textInfo.Text = thisText;
+                    textInfo.Number = i;
+
+                    allTexts.Add(textInfo);
+                }
+            }
+
+            return Ok(allTexts);
         }
 
         [HttpGet("teacher/getSeminar/{seminarId}")]
