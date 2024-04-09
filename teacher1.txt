@@ -1,0 +1,37 @@
+import warnings
+warnings.filterwarnings('ignore')
+
+import ipywidgets as widgets
+import requests
+from IPython.display import display
+
+seminarId = -1
+
+def createSeminar(b):
+    global seminarId
+    url = "https://localhost:7199/Seminar/NewSeminar" 
+    createSeminarRequest = requests.post(url, verify=False)
+
+    if createSeminarRequest.status_code == 200:
+        jsonify = createSeminarRequest.json()
+        with submitOutput:
+            b.disabled = True
+            seminarId = jsonify.get("id")
+            print("Семинар создан! Его код = " + str(seminarId) + ". Сообщите его студентам.")
+            
+    else:
+        with submitOutput:
+            print("Ошибка. Код: ")
+            print(createSeminarRequest.status_code)
+
+print("Чтобы начать семинар, просто нажмите на эту кнопку, когда будете готовы!")
+confirmButton = widgets.Button(
+    description="Создать семинар!"
+)
+submitOutput = widgets.Output()
+
+layout = widgets.VBox([confirmButton, submitOutput])
+
+confirmButton.on_click(createSeminar)
+
+display(layout)

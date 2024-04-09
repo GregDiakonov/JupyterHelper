@@ -1,0 +1,129 @@
+%%javascript
+
+var seminarId;
+var studentId
+var seminarStartedDate;
+
+var welcomeDiv = document.createElement("div");
+welcomeDiv.innerHTML = "Введите свою фамилию и имя, а также id семинара, который Вам сообщил преподаватель.";
+
+var delOne = document.createElement('br');
+
+var form = document.createElement("form");
+
+var surnameInput = document.createElement("input");
+surnameInput.type = "text";
+surnameInput.placeholder = "Фамилия";
+surnameInput.id = "surname";
+
+var nameInput = document.createElement("input");
+nameInput.type = "text";
+nameInput.placeholder = "Имя";
+nameInput.id = "name";
+
+var idInput = document.createElement("input");
+idInput.type = "number";
+idInput.placeholder = "ID";
+idInput.id = "id";
+
+form.appendChild(surnameInput);
+form.appendChild(document.createElement("br"));
+form.appendChild(nameInput);
+form.appendChild(document.createElement("br"));
+form.appendChild(idInput);
+
+var delTwo = document.createElement('br');
+
+var submitButton = document.createElement("button");
+submitButton.id = "studSubmit";
+submitButton.textContent = "Войти в семинар";
+
+// Див, отвечающий за ответ сервера.
+var output = document.createElement('div');
+output.setAttribute("id", "studOutput");
+
+element.append(welcomeDiv);
+element.append(delOne);
+element.append(form);
+element.append(delTwo);
+element.append(submitButton);
+element.append(output);
+
+// Метод, определяющий поведение кнопки.
+submitButton.addEventListener('click', async function() {
+    let surname = document.getElementById("surname").value;
+    let name = document.getElementById("name").value;
+    let semID = document.getElementById("id").value;
+
+    let url = 'https://localhost:7199/Seminar/NewStudent/' + name + "/" + surname + "/" + semID;
+
+    const serverResponse = await fetch (url, {
+        method: "POST",
+        mode: "cors",
+        headers: {
+          "Content-Type": "application/json",
+        },
+    })
+    .then(response => {
+        if (response.ok) {
+            console.log('Data sent successfully');
+        } else {
+            document.getElementById("output").innerHTML = "Сервер не отвечает. Воспользуйтесь программой позже.";
+            console.error('Failed to send data');
+        }
+
+        return response.json();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+    
+    const result = "Вы подключены к семинару с ID " + semID + ". Начинайте работу!";
+
+    studentId = serverResponse.id;
+    seminarId = semID;
+    seminarStartedDate = new Date();
+
+    document.getElementById("studOutput").innerHTML = result;
+    document.getElementById("studSubmit").disabled = true;
+
+    console.log(result);
+
+    setInterval(sendCodeCellTexts, 5000);
+});
+
+function sendCodeCellTexts() {
+    let codeCells = document.getElementsByClassName("lm-Widget jp-Cell jp-CodeCell jp-Notebook-cell");
+    var texts = [];
+
+    for (let codeCell of codeCells) {
+        let pureText = codeCell.getElementsByClassName("cm-content")[0].innerText;
+        texts.push(pureText);
+    }
+
+    let url = "https://localhost:7199/Seminar/students/" + seminarId + "/" + studentId;
+
+    let servResponse = fetch (url, {
+        method: "PUT",
+        mode: "cors",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(texts),
+    });
+
+    let thisCellNumber = -1;
+
+    for(var i = 0; i < codeCells.length; i++) {
+        if(codeCells[i].classList.contains("jp-mod-active")) {
+            thisCellNumber = i;
+        }
+    }
+
+    let positionUrl = "https://localhost:7199/Seminar/students/" + seminarId + "/" + studentId + "/" + thisCellNumber + "/" + codeCells.length;
+
+    let posServResponse = fetch (positionUrl, {
+        method: "PUT",
+        mode: "cors"
+    });
+}

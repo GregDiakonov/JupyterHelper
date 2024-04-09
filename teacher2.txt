@@ -1,0 +1,90 @@
+import warnings
+warnings.filterwarnings('ignore')
+import time
+import re
+
+textLayout = widgets.VBox()
+layout = widgets.VBox()
+
+overallLayout = widgets.HBox([layout, textLayout])
+display(overallLayout)
+widgetDictionary = {}
+
+def displayTexts(b):
+    textLayout.children = []
+    btnId = re.sub("[^0-9]", "", b.description)
+
+    textUrl = "https://localhost:7199/Seminar/teacher/getStudent/" + str(btnId)
+    textDataRequest = requests.get(textUrl, verify=False)
+    if textDataRequest.status_code == 200:
+        data = textDataRequest.json()
+        for text in data:
+            studentText = widgets.Textarea(
+                value=text.get("text"),
+                description="Текст клетки " + str(text.get("number")),
+                style = {'description_width': 'initial'}
+            )
+            textLayout.children = tuple(list(textLayout.children) + [studentText])
+
+    updateSliders()
+    display(textLayout)
+
+url = "https://localhost:7199/Seminar/teacher/getSeminar/" + str(seminarId)
+
+seminarDataRequest = requests.get(url, verify=False)
+
+if seminarDataRequest.status_code == 200:
+    data = seminarDataRequest.json()
+    for student in data:
+        studentSlider = widgets.FloatSlider(
+            description = (student.get("surname") + " " + student.get("name") + ":"),
+            min = 0,
+            max = 1,
+            value = student.get("position"),
+            disabled = True,
+            style = {'description_width': 'initial'}
+        )
+        widgetDictionary.update({student.get("id") : studentSlider})
+
+        studentButton = widgets.Button(
+            description = "Показать тексты для ID " + str(student.get("id"))
+        )
+        studentButton.on_click(displayTexts)
+
+        newStudentRecord = widgets.HBox([studentSlider, studentButton])
+        
+        layout.children = tuple(list(layout.children) + [newStudentRecord])
+else:
+    print("Сервер не отвечает!")
+    raise StopExecution
+
+
+def updateSliders():
+    global layout
+    global widgetDictionary
+    seminarDataRequest = requests.get(url, verify=False)
+
+    if seminarDataRequest.status_code == 200:
+        data = seminarDataRequest.json()
+        for student in data:
+            if student.get("id") in widgetDictionary:
+                widget = widgetDictionary.get(student.get("id"))
+                widget.value = student.get("position")
+            else:
+                studentSlider = widgets.FloatSlider(
+                    description = (student.get("surname") + " " + student.get("name") + ":"),
+                    min = 0,
+                    max = 1,
+                    value = student.get("position"),
+                    disabled = True,
+                    style = {'description_width': 'initial'})
+                widgetDictionary.update({student.get("id") : studentSlider})
+                studentButton = widgets.Button(
+                    description = "Показать тексты для ID " + str(student.get("id"))
+                )
+                studentButton.on_click(displayTexts)
+                newStudentRecord = widgets.HBox([studentSlider, studentButton])
+                
+                layout.children = tuple(list(layout.children) + [newStudentRecord])
+    else:
+        return
